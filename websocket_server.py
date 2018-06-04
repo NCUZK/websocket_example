@@ -15,22 +15,14 @@ class websocket_thread(threading.Thread):
     def run(self):
         print('new websocket client joined!')
         reply = "i got u, from websocket server."
-        print('reply before:',reply,type(reply))
-        # reply = str.encode(reply)
-        print('reply end:',reply,type(reply))
         length = len(reply)
         while True:
-            print('kyle.zhang for test run 1')
             data = self.connection.recv(1024)
-            print('kyle.zhang for test run 2')
             print("data: '%s'" % data, type(data))
             re = read_msg(data)
             print('re:'+re)
-            # self.connection.send(0x81, length, reply)
             reply_msg = write_msg(reply)
             self.connection.send(reply_msg)
-            # self.connection.send('%c%c%c' % (0x81, str(length).encode(), reply_msg.encode()))
-
 
 def read_msg(data):
     msg_len = data[1] & 127  # 数据载荷的长度
@@ -51,7 +43,6 @@ def read_msg(data):
 
 def write_msg(message):
     data = struct.pack('B', 129)  # 写入第一个字节，10000001
-
     # 写入包长度
     msg_len = len(message)
     if msg_len <= 125:
@@ -81,11 +72,8 @@ def parse_headers(msg):
 
 def generate_token(msg):
     key = msg + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
-    print('key before:',key,type(key))
     key = key.encode("utf-8")
-    print('key end:',key,type(key))
     ser_key = hashlib.sha1(key).digest()
-    print('ser_key:', ser_key, type(ser_key))
     return base64.b64encode(ser_key)
 
 
@@ -100,16 +88,12 @@ if __name__ == '__main__':
         try:
             data = connection.recv(1024)
             import pprint
-            print('data:',data,type(data))
+            # print('data:',data,type(data))
             headers = parse_headers(data)
             pprint.pprint(headers)
-            # print('headers:',headers,type(headers))
             token = generate_token(headers['Sec-WebSocket-Key'])
-            print('token:',token,type(token))
+            # print('token:',token,type(token))
 
-            print('kyle.zhang for test5')
-            #oken = str.encode(token)
-            # connection.send(token.decode())
             send_msg = '\
             HTTP/1.1 101 WebSocket Protocol Hybi-10\r\n\
             Upgrade: WebSocket\r\n\
