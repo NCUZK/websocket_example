@@ -24,7 +24,7 @@ class websocket_thread(threading.Thread):
             data = self.connection.recv(1024)
             print('kyle.zhang for test run 2')
             print("data: '%s'" % data, type(data))
-            re = parse_data(data)
+            re = read_msg(data)
             print('re:'+re)
             # self.connection.send(0x81, length, reply)
             reply_msg = write_msg(reply)
@@ -32,21 +32,22 @@ class websocket_thread(threading.Thread):
             # self.connection.send('%c%c%c' % (0x81, str(length).encode(), reply_msg.encode()))
 
 
-def parse_data(msg):
-    print(msg[1], type(msg[1]))
-    # v = ord(msg[1]) & 0x7f
-    v = msg[1] & 0x7f
-    if v == 0x7e:
-        p = 4
-    elif v == 0x7f:
-        p = 10
+def read_msg(data):
+    msg_len = data[1] & 127  # 数据载荷的长度
+    if msg_len == 126:
+        mask = data[4:8]  # Mask 掩码
+        content = data[8:]  # 消息内容
+    elif msg_len == 127:
+        mask = data[10:14]
+        content = data[14:]
     else:
-        p = 2
-    mask = msg[p:p + 4]
-    data = msg[p + 4:]
-    print(mask,data)
+        mask = data[2:6]
+        content = data[6:]
 
-    return ''.join([chr( (v) ^  (mask[k % 4])) for k, v in enumerate(data)])
+    raw_str = ''  # 解码后的内容
+    for i, d in enumerate(content):
+        raw_str += chr(d ^ mask[i % 4])
+    return raw_str
 
 def write_msg(message):
     data = struct.pack('B', 129)  # 写入第一个字节，10000001
